@@ -1,24 +1,26 @@
 
+ // DUPLA: NOME DO INTEGRANTE 1 e NOME DO INTEGRANTE 2
  // ============================================================
  // S2_library-bad.js — Mãos à Obra da Semana 2 (Parte A)
- // Este código FUNCIONA (rode: node S2_library-bad.js). E é ruim de propósito.
+ // Este código FUNCIONA (rode: node s2/S2_library-bad.js). E é ruim de propósito.
  // Sua tarefa, em dupla: NÃO refatore. Apenas leia e marque os cheiros.
- // Use // SMELL: <nome>        para cada code smell (nomes do slide 16)
- // Use // VIOLA: <S|O|L|I|D>   para cada princípio SOLID violado (slide 4)
+ // Use // SMELL: <nome> para cada code smell (nomes do slide 16)
+ // Use // VIOLA: <S|O|L|I|D> para cada princípio SOLID violado (slide 4)
  // ============================================================
 
- // VIOLA: S
- // SMELL: God Class
+ // SMELL: Nome obscuro — Library concentra livros, usuários e empréstimos
+ // VIOLA: S — a classe acumula responsabilidades diferentes
  class Library {
    constructor() {
+     // SMELL: Nome obscuro — abreviações dificultam a leitura
      this.bks = [];
      this.us = [];
      this.lns = [];
    }
 
-   // SMELL: Long Function
-   // SMELL: Switch sobre tipo
-   // VIOLA: O
+   // SMELL: Long Function — concentra várias operações
+   // SMELL: Switch sobre tipo — action seleciona comportamentos diferentes
+   // VIOLA: O — adicionar novas ações exige alterar este método
    doStuff(book, userId, action) {
      if (action === 'add') {
        this.bks.push(book);
@@ -35,13 +37,14 @@
        if (u != null && b != null && b.cp > 0) {
          b.cp = b.cp - 1;
          this.lns.push({ uid: userId, bt: book.t, d: new Date(), st: 1 });
-         // SMELL: Magic Numbers
-         // 1 = active, 2 = returned, 3 = overdue
-         // VIOLA: D
+         // SMELL: Magic Number — 1 representa o status de empréstimo ativo
+         // VIOLA: D — a classe depende diretamente de um serviço externo de e-mail
          fetch('http://email.api/send', {
            method: 'POST',
            body: JSON.stringify({ to: u.em, msg: 'Você pegou ' + book.t })
-         }).then(r => { /* nada */ }).catch(e => {});
+         }).then(r => { /* nada */ }).catch(e => {
+           // SMELL: Erro engolido — a falha é ignorada
+         });
        }
      } else if (action === 'return') {
        for (var k = 0; k < this.lns.length; k++) {
@@ -54,7 +57,7 @@
        }
      } else if (action === 'overdue') {
        for (var n = 0; n < this.lns.length; n++) {
-         // SMELL: Magic Numbers
+         // SMELL: Magic Number — 1000 * 60 * 60 * 24 converte milissegundos em dias
          var diff = (new Date() - this.lns[n].d) / (1000 * 60 * 60 * 24);
          if (this.lns[n].st === 1 && diff > 7) {
            this.lns[n].st = 3;
@@ -63,7 +66,7 @@
              if (this.us[p].id === this.lns[n].uid) { usr = this.us[p]; }
            }
            if (usr) {
-             // VIOLA: D
+             // VIOLA: D — a classe também envia notificações diretamente nesta operação
              fetch('http://email.api/send', {
                method: 'POST',
                body: JSON.stringify({ to: usr.em, msg: 'Atrasado: ' + this.lns[n].bt })
@@ -74,14 +77,14 @@
      }
    }
 
-   // SMELL: Long Parameter List
-   // SMELL: Data Clumps
+   // SMELL: Long Parameter List — muitos parâmetros individuais
+   // SMELL: Data Clumps — dados de cadastro relacionados são passados juntos
    registerUser(n, e, ph, addr, cty, st, zp, isAdm) {
      this.us.push({ id: this.us.length + 1, n: n, em: e, ph: ph, addr: addr, cty: cty, st: st, zp: zp, isAdm: isAdm });
    }
 
-   // SMELL: Switch sobre tipo
-   // SMELL: Magic Numbers
+   // SMELL: Switch sobre tipo — type seleciona qual relatório exibir
+   // SMELL: Magic Number — 1, 2 e 3 representam tipos de relatório
    report(type) {
      if (type === 1) {
        console.log('Total de livros: ' + this.bks.length);
